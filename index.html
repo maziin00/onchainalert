@@ -1,26 +1,93 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Lovable App</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
-
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Lovable App" />
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <title>Onchain Alert</title>
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="app">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Onchain Radar</p>
+          <h1>Auto Alert dari Arkham dan Coinmarketcap.</h1>
+          <p class="subtitle">
+            Sistem otomatis menarik top token CMC, membaca transfer token di Arkham,
+            lalu menghitung akumulasi atau distribusi berdasarkan net flow.
+          </p>
+          <div class="status-row">
+            <span class="status-pill" id="status-pill">Menunggu data</span>
+            <span class="status-meta" id="last-updated">Last update: -</span>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div>
+            <p class="label">Top token</p>
+            <strong id="summary-token">500</strong>
+          </div>
+          <div>
+            <p class="label">Window</p>
+            <strong id="summary-window">48 jam</strong>
+          </div>
+          <div>
+            <p class="label">Min supply</p>
+            <strong id="summary-min">0.001%</strong>
+          </div>
+          <div>
+            <p class="label">Auto refresh</p>
+            <strong id="summary-refresh">5 menit</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Alert Setting</h2>
+          <p class="hint">
+            Data diambil otomatis. Ubah parameter di bawah untuk menentukan jumlah
+            token top CMC, window waktu, dan refresh otomatis.
+          </p>
+          <div class="form-row">
+            <label>
+              Top token (CMC)
+              <input id="token-limit" type="number" min="1" max="500" value="500" />
+            </label>
+            <label>
+              Window (jam)
+              <input id="window-hours" type="number" value="48" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              Min supply (%)
+              <input id="min-supply" type="number" step="0.001" value="0.001" />
+            </label>
+            <label>
+              Auto refresh (menit)
+              <input id="refresh-minutes" type="number" min="1" value="5" />
+            </label>
+          </div>
+          <div class="actions">
+            <button type="button" class="primary" id="fetch-alerts">Ambil alert</button>
+            <button type="button" class="ghost" id="toggle-auto">Stop</button>
+            <button type="button" class="ghost" id="clear-alerts">Bersihkan</button>
+          </div>
+          <p class="error" id="error-message" hidden></p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Alert List</h2>
+            <span class="badge" id="alert-count">0 sinyal</span>
+          </div>
+          <div class="empty" id="empty-state">
+            <p>Belum ada alert. Data akan muncul otomatis setelah fetch pertama.</p>
+          </div>
+          <div class="alert-list" id="alert-list" hidden></div>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>
