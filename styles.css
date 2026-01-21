@@ -196,6 +196,10 @@
     margin-top: 12px;
     color: #f87171;
   }
+
+  .error[data-state="warning"] {
+    color: #fbbf24;
+  }
   
   .panel-header {
     display: flex;
