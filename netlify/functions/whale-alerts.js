@@ -1,5 +1,6 @@
 const CMC_BASE = "https://pro-api.coinmarketcap.com/v1";
 const ARKHAM_BASE = "https://api.arkm.com";
+const MAX_TOKEN_LIMIT = 15;
 
 function normalizeAddress(address) {
   return (address || "").toLowerCase();
@@ -248,7 +249,8 @@ export default async (request) => {
   try {
     const debugEnabled = process.env.DEBUG_ARKHAM === "1";
     const url = new URL(request.url);
-    const limit = parseNumber(url.searchParams.get("limit") ?? "50");
+    const requestedLimit = parseNumber(url.searchParams.get("limit") ?? "50");
+    const limit = Math.max(1, Math.min(requestedLimit, MAX_TOKEN_LIMIT));
     const windowHours = parseNumber(url.searchParams.get("windowHours") ?? "24");
     const minSupplyPercent = parseNumber(url.searchParams.get("minSupplyPercent") ?? "0.1");
 
@@ -263,6 +265,11 @@ export default async (request) => {
     }
 
     const labelLookup = await getArkhamLabelMap(arkhamApiKey);
+
+    const warning =
+      requestedLimit > MAX_TOKEN_LIMIT
+        ? `Limit token dipangkas ke ${MAX_TOKEN_LIMIT} agar tidak timeout di Netlify.`
+        : "";
 
     const tokens = await getTopTokens(limit, cmcApiKey);
     const alerts = [];
@@ -307,12 +314,19 @@ export default async (request) => {
       await sleep(1100);
     }
 
-    return new Response(JSON.stringify({ alerts }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        alerts,
+        warning,
+        requestedLimit,
+        appliedLimit: limit,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 };
-
