@@ -120,6 +120,7 @@ async function fetchAlerts() {
   }
   currentAbortController = new AbortController();
   errorMessage.hidden = true;
+  errorMessage.dataset.state = "";
   statusPill.textContent = "Mengambil data...";
   statusPill.dataset.state = "loading";
   fetchButton.disabled = true;
@@ -145,6 +146,11 @@ async function fetchAlerts() {
     renderAlerts(alerts);
     statusPill.textContent = "Terhubung";
     statusPill.dataset.state = "ready";
+    if (payload.warning) {
+      errorMessage.textContent = payload.warning;
+      errorMessage.dataset.state = "warning";
+      errorMessage.hidden = false;
+    }
     if (alerts.length) {
       lastUpdated.textContent = `Last update: ${new Date().toLocaleString()}`;
     }
@@ -156,6 +162,7 @@ async function fetchAlerts() {
       return;
     }
     errorMessage.textContent = error.message;
+    errorMessage.dataset.state = "error";
     errorMessage.hidden = false;
     statusPill.textContent = "Error";
     statusPill.dataset.state = "error";
