@@ -11,32 +11,32 @@
       <header class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Onchain Radar</p>
-          <h1>Auto Alert dari Arkham dan Coinmarketcap.</h1>
+          <h1>Auto Alert Built by Maziin00.</h1>
           <p class="subtitle">
             Sistem otomatis menarik top token CMC, membaca transfer token di Arkham,
-            lalu menghitung akumulasi atau distribusi berdasarkan net flow.
+            lalu menghitung akumulasi atau distribusi berdasarkan netflow.
           </p>
           <div class="status-row">
-            <span class="status-pill" id="status-pill">Menunggu data</span>
-            <span class="status-meta" id="last-updated">Last update: -</span>
+            <span class="status-pill" id="status-pill">Menunggu Data</span>
+            <span class="status-meta" id="last-updated">Last Update: -</span>
           </div>
         </div>
         <div class="hero-card">
           <div>
-            <p class="label">Top token</p>
+            <p class="label">Top Token</p>
             <strong id="summary-token">100</strong>
           </div>
           <div>
             <p class="label">Window</p>
-            <strong id="summary-window">24 jam</strong>
+            <strong id="summary-window">24 Jam</strong>
           </div>
           <div>
-            <p class="label">Min supply</p>
+            <p class="label">Min. Supply</p>
             <strong id="summary-min">0.001%</strong>
           </div>
           <div>
-            <p class="label">Auto refresh</p>
-            <strong id="summary-refresh">5 menit</strong>
+            <p class="label">Auto Refresh</p>
+            <strong id="summary-refresh">5 Menit</strong>
           </div>
         </div>
       </header>
@@ -45,40 +45,40 @@
         <div class="panel">
           <h2>Alert Setting</h2>
           <p class="hint">
-            Data diambil otomatis. Ubah parameter di bawah untuk menentukan jumlah
+            Data diambil otomatis untuk mengubah parameter di bawah untuk menentukan jumlah
             token top CMC, window waktu, dan refresh otomatis.
           </p>
           <div class="form-row">
             <label>
-              Top token (CMC)
+              Top Token (CMC)
               <input id="token-limit" type="number" min="1" max="500" value="100" />
             </label>
             <label>
-              Window (jam)
+              Window (Jam)
               <input id="window-hours" type="number" value="24" />
             </label>
           </div>
           <div class="form-row">
             <label>
-              Min supply (%)
+              Min. Supply (%)
               <input id="min-supply" type="number" step="0.001" value="0.001" />
             </label>
             <label>
-              Timeframe (signal)
+              TimeFrame (Signal)
               <select id="signal-timeframe">
-                <option value="6">6 jam</option>
-                <option value="12">12 jam</option>
-                <option value="24">1 hari</option>
-                <option value="168" selected>1 minggu</option>
+                <option value="6">6 Jam</option>
+                <option value="12">12 Jam</option>
+                <option value="24">1 Hari</option>
+                <option value="168" selected>1 Minggu</option>
               </select>
             </label>
             <label>
-              Auto refresh (menit)
+              Auto Refresh (Menit)
               <input id="refresh-minutes" type="number" min="1" value="5" />
             </label>
           </div>
           <div class="actions">
-            <button type="button" class="primary" id="fetch-alerts">Ambil alert</button>
+            <button type="button" class="primary" id="fetch-alerts">Ambil Alert</button>
             <button type="button" class="ghost" id="toggle-auto">Stop</button>
             <button type="button" class="ghost" id="clear-alerts">Bersihkan</button>
           </div>
@@ -88,7 +88,7 @@
               <span class="signal-badge neutral" id="trade-action">-</span>
             </div>
             <div class="trade-grid" id="trade-list"></div>
-            <p class="signal-meta">Support/resist dihitung dari harga CMC (estimasi 5%-10%).</p>
+            <p class="signal-meta">Support/Resist dihitung dari harga CMC (estimasi 5%-10%).</p>
           </div>
           <p class="error" id="error-message" hidden></p>
         </div>
@@ -96,7 +96,7 @@
         <div class="panel">
           <div class="panel-header">
             <h2>Alert List</h2>
-            <span class="badge" id="alert-count">0 sinyal</span>
+            <span class="badge" id="alert-count">0 Signal</span>
           </div>
           <div class="signal-summary" id="signal-summary">
             <div class="signal-header">
@@ -105,7 +105,7 @@
             </div>
             <div class="signal-grid">
               <div>
-                <p class="label">Timeframe</p>
+                <p class="label">TimeFrame</p>
                 <strong id="signal-timeframe-value">-</strong>
               </div>
               <div>
@@ -130,12 +130,12 @@
               </div>
             </div>
             <p class="signal-meta">
-              Wallet unik: <strong id="signal-wallets">0</strong> • Smart money:
-              <strong id="signal-smart">0</strong> • Market maker:
+              Wallet Unik: <strong id="signal-wallets">0</strong> • Smart Money:
+              <strong id="signal-smart">0</strong> • Market Maker:
               <strong id="signal-mm">0</strong>
             </p>
             <div class="signal-movers">
-              <p class="label">Top movers</p>
+              <p class="label">Top Movers</p>
               <div class="signal-list" id="signal-movers"></div>
             </div>
           </div>
