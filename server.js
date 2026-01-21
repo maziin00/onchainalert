@@ -3,7 +3,7 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import whaleAlerts from "./netlify/function/whale-alerts.js";
+import whaleAlerts from "./netlify/functions/whale-alerts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

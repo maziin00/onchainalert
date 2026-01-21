@@ -1,6 +1,25 @@
 const CMC_BASE = "https://pro-api.coinmarketcap.com/v1";
 const ARKHAM_BASE = "https://api.arkm.com";
-const MAX_TOKEN_LIMIT = 15;
+const MAX_TOKEN_LIMIT = parseNumber(process.env.MAX_TOKEN_LIMIT || "100");
+const STABLECOIN_SYMBOLS = new Set([
+  "USDT",
+  "USDC",
+  "DAI",
+  "USDE",
+  "USDD",
+  "TUSD",
+  "USDP",
+  "USD1",
+  "FDUSD",
+  "FRAX",
+  "PYUSD",
+  "LUSD",
+  "GUSD",
+  "BUSD",
+  "USDB",
+  "USDY",
+  "USDS",
+]);
 
 function normalizeAddress(address) {
   return (address || "").toLowerCase();
@@ -218,7 +237,17 @@ function computeNetFlows(transfers) {
   }));
 }
 
-function buildAlerts({ tokenSymbol, totalSupply, netFlows, minSupplyPercent, labelLookup }) {
+function buildAlerts({
+  tokenSymbol,
+  totalSupply,
+  netFlows,
+  minSupplyPercent,
+  labelLookup,
+  priceUsd,
+}) {
+  if (STABLECOIN_SYMBOLS.has((tokenSymbol || "").toUpperCase())) {
+    return [];
+  }
   const alerts = [];
   for (const flow of netFlows) {
     const supplyPercent = totalSupply === 0 ? 0 : (flow.net / totalSupply) * 100;
@@ -230,6 +259,7 @@ function buildAlerts({ tokenSymbol, totalSupply, netFlows, minSupplyPercent, lab
     const labelType = flow.labelType || "unknown";
     alerts.push({
       tokenSymbol,
+      tokenPriceUsd: priceUsd,
       address: flow.address,
       netFlow: flow.net,
       netFlowUsd: flow.netUsd,
@@ -252,6 +282,10 @@ export default async (request) => {
     const requestedLimit = parseNumber(url.searchParams.get("limit") ?? "50");
     const limit = Math.max(1, Math.min(requestedLimit, MAX_TOKEN_LIMIT));
     const windowHours = parseNumber(url.searchParams.get("windowHours") ?? "24");
+    const signalTimeframeHours = parseNumber(
+      url.searchParams.get("signalTimeframeHours") ?? String(windowHours)
+    );
+    const fetchWindowHours = Math.max(windowHours, signalTimeframeHours);
     const minSupplyPercent = parseNumber(url.searchParams.get("minSupplyPercent") ?? "0.1");
 
     const cmcApiKey = process.env.CMC_API_KEY;
@@ -274,14 +308,29 @@ export default async (request) => {
     const tokens = await getTopTokens(limit, cmcApiKey);
     const alerts = [];
     let loggedSample = false;
+    const globalFlows = new Map();
+    const movers = [];
+    const priceMap = new Map();
+    const addressSet = new Set();
+    const smartSet = new Set();
+    const mmSet = new Set();
+    const cexSet = new Set();
+    let totalCirculatingSupply = 0;
+    let cexInflowUsd = 0;
+    let cexOutflowUsd = 0;
+    let cexInflowTx = 0;
+    let cexOutflowTx = 0;
 
     for (const token of tokens) {
+      if (STABLECOIN_SYMBOLS.has((token.symbol || "").toUpperCase())) {
+        continue;
+      }
       const platform = token.platform ?? {};
       const tokenAddress = platform.token_address;
       if (!tokenAddress || !isEthereumPlatform(platform) || !isValidEthAddress(tokenAddress)) {
         continue;
       }
-      const transfers = await getTokenTransfers(tokenAddress, arkhamApiKey, windowHours);
+      const transfers = await getTokenTransfers(tokenAddress, arkhamApiKey, fetchWindowHours);
       if (debugEnabled && !loggedSample && transfers.length > 0) {
         const sample = transfers[0];
         console.log("[arkham] transfer sample", {
@@ -300,23 +349,163 @@ export default async (request) => {
         });
         loggedSample = true;
       }
-      const windowed = filterByWindow(transfers, windowHours);
-      const netFlows = computeNetFlows(windowed);
+      const windowedAlerts = filterByWindow(transfers, windowHours);
+      const windowedSignal = filterByWindow(transfers, signalTimeframeHours);
+      const netFlowsAlerts = computeNetFlows(windowedAlerts);
+      const netFlowsSignal = computeNetFlows(windowedSignal);
       const supply = parseNumber(token.circulating_supply || token.total_supply || 0);
+      const priceUsd = parseNumber(token.quote?.USD?.price);
+      if (token.symbol) {
+        priceMap.set(token.symbol, priceUsd);
+      }
+      totalCirculatingSupply += supply;
+      for (const transfer of windowedSignal) {
+        const usd = parseNumber(transfer.historicalUSD);
+        const from = normalizeAddress(transfer.fromAddress?.address);
+        const to = normalizeAddress(transfer.toAddress?.address);
+        const fromType = normalizeEntityType(transfer.fromAddress?.arkhamEntity?.type);
+        const toType = normalizeEntityType(transfer.toAddress?.arkhamEntity?.type);
+        if (from) {
+          addressSet.add(from);
+          if (fromType === "smart") {
+            smartSet.add(from);
+          }
+          if (fromType === "mm") {
+            mmSet.add(from);
+          }
+          if (fromType === "cex") {
+            cexSet.add(from);
+            cexOutflowUsd += usd;
+            cexOutflowTx += 1;
+          }
+        }
+        if (to) {
+          addressSet.add(to);
+          if (toType === "smart") {
+            smartSet.add(to);
+          }
+          if (toType === "mm") {
+            mmSet.add(to);
+          }
+          if (toType === "cex") {
+            cexSet.add(to);
+            cexInflowUsd += usd;
+            cexInflowTx += 1;
+          }
+        }
+      }
       const tokenAlerts = buildAlerts({
         tokenSymbol: token.symbol,
         totalSupply: supply,
-        netFlows,
+        netFlows: netFlowsAlerts,
         minSupplyPercent,
         labelLookup,
+        priceUsd,
       });
       alerts.push(...tokenAlerts.slice(0, 3));
+      for (const flow of netFlowsSignal) {
+        const entry = globalFlows.get(flow.address) || {
+          address: flow.address,
+          labelName: flow.labelName,
+          labelType: flow.labelType,
+          inflowUsd: 0,
+          outflowUsd: 0,
+          netUsd: 0,
+          tokenSymbol: token.symbol,
+        };
+        entry.inflowUsd += flow.inflowUsd;
+        entry.outflowUsd += flow.outflowUsd;
+        entry.netUsd += flow.netUsd;
+        entry.labelName = entry.labelName || flow.labelName;
+        entry.labelType = entry.labelType || flow.labelType;
+        globalFlows.set(flow.address, entry);
+      }
+      const tokenMovers = [...netFlowsSignal]
+        .sort((a, b) => Math.abs(b.netUsd) - Math.abs(a.netUsd))
+        .slice(0, 3)
+        .map((flow) => ({
+          tokenSymbol: token.symbol,
+          address: flow.address,
+          labelName: flow.labelName,
+          labelType: flow.labelType,
+          netUsd: flow.netUsd,
+          inflowUsd: flow.inflowUsd,
+          outflowUsd: flow.outflowUsd,
+        }));
+      movers.push(...tokenMovers);
       await sleep(1100);
+    }
+
+    const flowEntries = Array.from(globalFlows.values());
+    const accumulators = flowEntries.filter((flow) => flow.netUsd > 0);
+    const distributors = flowEntries.filter((flow) => flow.netUsd < 0);
+    const accumulatorUsd = accumulators.reduce((sum, flow) => sum + flow.netUsd, 0);
+    const distributorUsd = distributors.reduce((sum, flow) => sum + Math.abs(flow.netUsd), 0);
+    const cexNetUsd = cexInflowUsd - cexOutflowUsd;
+    let signal = "neutral";
+    if (cexNetUsd < 0 && accumulators.length >= distributors.length) {
+      signal = "bullish";
+    } else if (cexNetUsd > 0 && distributors.length > accumulators.length) {
+      signal = "bearish";
+    }
+
+    const topMovers = movers
+      .filter((mover) => !STABLECOIN_SYMBOLS.has((mover.tokenSymbol || "").toUpperCase()))
+      .sort((a, b) => Math.abs(b.netUsd) - Math.abs(a.netUsd))
+      .slice(0, 10);
+
+    let tradeSignals = [];
+    if (topMovers.length > 0) {
+      const action = signal === "bullish" ? "buy" : signal === "bearish" ? "sell" : "wait";
+      if (action !== "wait") {
+        const candidates = topMovers
+          .filter((mover) => (action === "buy" ? mover.netUsd > 0 : mover.netUsd < 0))
+          .slice(0, 3);
+        tradeSignals = candidates.map((mover) => {
+          const price = priceMap.get(mover.tokenSymbol) || 0;
+          const support = price ? price * 0.95 : 0;
+          const resistance = price ? price * 1.1 : 0;
+          const stopLoss = price
+            ? action === "buy"
+              ? price * 0.95
+              : price * 1.05
+            : 0;
+          return {
+            action,
+            tokenSymbol: mover.tokenSymbol,
+            priceUsd: price,
+            supportUsd: support,
+            resistanceUsd: resistance,
+            stopLossUsd: stopLoss,
+          };
+        });
+      }
     }
 
     return new Response(
       JSON.stringify({
         alerts,
+        summary: {
+          timeframeHours: windowHours,
+          signal,
+          accumulatorCount: accumulators.length,
+          accumulatorUsd,
+          distributorCount: distributors.length,
+          distributorUsd,
+          cexInflowUsd,
+          cexOutflowUsd,
+          cexNetUsd,
+          cexInflowTx,
+          cexOutflowTx,
+          uniqueWallets: addressSet.size,
+          smartWallets: smartSet.size,
+          marketMakerWallets: mmSet.size,
+          cexWallets: cexSet.size,
+          circulatingSupply: totalCirculatingSupply,
+          topMovers,
+          signalTimeframeHours,
+          tradeSignals,
+        },
         warning,
         requestedLimit,
         appliedLimit: limit,

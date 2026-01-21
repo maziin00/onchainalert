@@ -2,6 +2,7 @@ const tokenLimitInput = document.getElementById("token-limit");
 const windowHoursInput = document.getElementById("window-hours");
 const minSupplyInput = document.getElementById("min-supply");
 const refreshMinutesInput = document.getElementById("refresh-minutes");
+const signalTimeframeInput = document.getElementById("signal-timeframe");
 const fetchButton = document.getElementById("fetch-alerts");
 const toggleAutoButton = document.getElementById("toggle-auto");
 const clearButton = document.getElementById("clear-alerts");
@@ -15,13 +16,48 @@ const summaryMin = document.getElementById("summary-min");
 const summaryRefresh = document.getElementById("summary-refresh");
 const statusPill = document.getElementById("status-pill");
 const lastUpdated = document.getElementById("last-updated");
+const signalStatus = document.getElementById("signal-status");
+const signalTimeframe = document.getElementById("signal-timeframe-value");
+const signalCexInflow = document.getElementById("signal-cex-inflow");
+const signalCexOutflow = document.getElementById("signal-cex-outflow");
+const signalCexNet = document.getElementById("signal-cex-net");
+const signalAccumulators = document.getElementById("signal-accumulators");
+const signalDistributors = document.getElementById("signal-distributors");
+const signalWallets = document.getElementById("signal-wallets");
+const signalSmart = document.getElementById("signal-smart");
+const signalMm = document.getElementById("signal-mm");
+const signalMovers = document.getElementById("signal-movers");
+const tradeAction = document.getElementById("trade-action");
+const tradeList = document.getElementById("trade-list");
 
 const formatAmount = (value) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value);
+const formatPrice = (value) =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(value);
 let refreshTimer = null;
 let hasFetchedOnce = false;
 let currentAbortController = null;
 let isStopped = false;
+
+function formatWindowLabel(hoursValue) {
+  const hours = Number(hoursValue);
+  if (hours === 6) {
+    return "6 jam";
+  }
+  if (hours === 12) {
+    return "12 jam";
+  }
+  if (hours === 24) {
+    return "1 hari";
+  }
+  if (hours === 168) {
+    return "1 minggu";
+  }
+  if (Number.isFinite(hours)) {
+    return `${hours} jam`;
+  }
+  return "-";
+}
 
 function updateAutoButton() {
   toggleAutoButton.textContent = "Stop";
@@ -29,7 +65,7 @@ function updateAutoButton() {
 
 function updateSummary() {
   summaryToken.textContent = tokenLimitInput.value;
-  summaryWindow.textContent = `${windowHoursInput.value} jam`;
+  summaryWindow.textContent = formatWindowLabel(windowHoursInput.value);
   summaryMin.textContent = `${minSupplyInput.value}%`;
   summaryRefresh.textContent = `${refreshMinutesInput.value} menit`;
 }
@@ -108,8 +144,100 @@ function renderAlerts(alerts) {
       details.append(line3);
     }
 
+
     card.append(header, chip, details);
     alertList.appendChild(card);
+  });
+}
+
+function renderSignalSummary(summary) {
+  if (!summary) {
+    signalStatus.textContent = "-";
+    signalStatus.className = "signal-badge neutral";
+    signalTimeframe.textContent = "-";
+    signalCexInflow.textContent = "$0";
+    signalCexOutflow.textContent = "$0";
+    signalCexNet.textContent = "$0";
+    signalAccumulators.textContent = "0";
+    signalDistributors.textContent = "0";
+    signalWallets.textContent = "0";
+    signalSmart.textContent = "0";
+    signalMm.textContent = "0";
+    signalMovers.innerHTML = "";
+    tradeAction.textContent = "-";
+    tradeAction.className = "signal-badge neutral";
+    tradeList.innerHTML = "";
+    return;
+  }
+
+  const signal = summary.signal || "neutral";
+  signalStatus.textContent = signal.toUpperCase();
+  signalStatus.className = `signal-badge ${signal}`;
+  signalTimeframe.textContent = formatWindowLabel(
+    summary.signalTimeframeHours || summary.timeframeHours
+  );
+  signalCexInflow.textContent = `$${formatAmount(summary.cexInflowUsd || 0)}`;
+  signalCexOutflow.textContent = `$${formatAmount(summary.cexOutflowUsd || 0)}`;
+  signalCexNet.textContent = `$${formatAmount(summary.cexNetUsd || 0)}`;
+  signalAccumulators.textContent = formatAmount(summary.accumulatorCount || 0);
+  signalDistributors.textContent = formatAmount(summary.distributorCount || 0);
+  signalWallets.textContent = formatAmount(summary.uniqueWallets || 0);
+  signalSmart.textContent = formatAmount(summary.smartWallets || 0);
+  signalMm.textContent = formatAmount(summary.marketMakerWallets || 0);
+
+  signalMovers.innerHTML = "";
+  const movers = summary.topMovers || [];
+  if (!movers.length) {
+    signalMovers.innerHTML = '<div class="signal-item">-</div>';
+    return;
+  }
+  movers.forEach((mover) => {
+    const row = document.createElement("div");
+    row.className = "signal-item";
+    const label = mover.labelName
+      ? `${mover.labelName} • ${String(mover.labelType || "unknown").toUpperCase()}`
+      : `Label: - • ${String(mover.labelType || "unknown").toUpperCase()}`;
+    row.innerHTML = `<div>${mover.tokenSymbol} <span>${label}</span></div>
+      <div>$${formatAmount(mover.netUsd || 0)}</div>`;
+    signalMovers.appendChild(row);
+  });
+
+  const trades = summary.tradeSignals || [];
+  tradeList.innerHTML = "";
+  if (!trades.length) {
+    tradeAction.textContent = "-";
+    tradeAction.className = "signal-badge neutral";
+    tradeList.innerHTML = '<div class="trade-card">-</div>';
+    return;
+  }
+
+  tradeAction.textContent = trades[0].action.toUpperCase();
+  tradeAction.className = `signal-badge ${trades[0].action === "buy" ? "bullish" : "bearish"}`;
+  trades.forEach((trade) => {
+    const card = document.createElement("div");
+    card.className = "trade-card";
+    card.innerHTML = `
+      <div class="trade-line">
+        <span class="trade-label">Ticker</span>
+        <strong>${trade.tokenSymbol || "-"}</strong>
+      </div>
+      <div class="trade-line">
+        <span class="trade-label">Harga</span>
+        <strong>$${formatPrice(trade.priceUsd || 0)}</strong>
+      </div>
+      <div class="trade-inline">
+        <span><span class="trade-label">Buy</span> $${formatPrice(
+          trade.supportUsd || 0
+        )}</span>
+        <span><span class="trade-label">Sell</span> $${formatPrice(
+          trade.resistanceUsd || 0
+        )}</span>
+        <span><span class="trade-label">Cutloss</span> $${formatPrice(
+          trade.stopLossUsd || 0
+        )}</span>
+      </div>
+    `;
+    tradeList.appendChild(card);
   });
 }
 
@@ -130,6 +258,7 @@ async function fetchAlerts() {
       limit: tokenLimitInput.value,
       windowHours: windowHoursInput.value,
       minSupplyPercent: minSupplyInput.value,
+      signalTimeframeHours: signalTimeframeInput.value,
     });
     const response = await fetch(`/api/whale-alerts?${params.toString()}`, {
       signal: currentAbortController.signal,
@@ -144,6 +273,7 @@ async function fetchAlerts() {
     }
     const alerts = payload.alerts || [];
     renderAlerts(alerts);
+    renderSignalSummary(payload.summary);
     statusPill.textContent = "Terhubung";
     statusPill.dataset.state = "ready";
     if (payload.warning) {
@@ -166,6 +296,7 @@ async function fetchAlerts() {
     errorMessage.hidden = false;
     statusPill.textContent = "Error";
     statusPill.dataset.state = "error";
+    renderSignalSummary(null);
   } finally {
     fetchButton.disabled = false;
     fetchButton.textContent = "Ambil alert";
@@ -205,6 +336,8 @@ toggleAutoButton.addEventListener("click", () => {
   if (currentAbortController) {
     currentAbortController.abort();
   }
+  statusPill.textContent = "Berhenti";
+  statusPill.dataset.state = "error";
 });
 
 tokenLimitInput.addEventListener("input", updateSummary);
@@ -214,7 +347,9 @@ refreshMinutesInput.addEventListener("input", () => {
   updateSummary();
   scheduleAutoRefresh();
 });
+signalTimeframeInput.addEventListener("input", updateSummary);
 
 updateSummary();
 renderAlerts([]);
 updateAutoButton();
+renderSignalSummary(null);

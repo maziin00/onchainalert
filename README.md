@@ -6,6 +6,7 @@ UI untuk memantau whale alert dari data transfer Arkham + top token dari CMC.
 - Ambil top token dari CoinMarketCap
 - Hitung inflow/outflow per address dari Arkham
 - Label address (CEX/DEX/Wallet/dll) dari Arkham
+- Ringkasan signal bullish/bearish berbasis aliran CEX
 - Auto refresh bisa dihentikan dengan tombol Stop
 
 ## Setup
@@ -21,6 +22,7 @@ cp .env.example .env
 Isi:
 - `CMC_API_KEY`
 - `ARKHAM_API_KEY`
+- `MAX_TOKEN_LIMIT` (opsional, default 100 agar tidak timeout di Netlify)
 
 3) Jalankan server
 ```bash
