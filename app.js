@@ -29,6 +29,10 @@ const signalMm = document.getElementById("signal-mm");
 const signalMovers = document.getElementById("signal-movers");
 const tradeAction = document.getElementById("trade-action");
 const tradeList = document.getElementById("trade-list");
+const tradeToggle = document.getElementById("trade-toggle");
+const tradeBody = document.getElementById("trade-body");
+const sentimentToggle = document.getElementById("sentiment-toggle");
+const sentimentBody = document.getElementById("sentiment-body");
 
 const formatAmount = (value) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value);
@@ -38,6 +42,22 @@ let refreshTimer = null;
 let hasFetchedOnce = false;
 let currentAbortController = null;
 let isStopped = false;
+
+function setupCollapsible(toggle, body, defaultOpen = true) {
+  if (!toggle || !body) {
+    return;
+  }
+  const setOpen = (open) => {
+    toggle.classList.toggle("open", open);
+    body.hidden = !open;
+  };
+  let isOpen = defaultOpen;
+  setOpen(isOpen);
+  toggle.addEventListener("click", () => {
+    isOpen = !isOpen;
+    setOpen(isOpen);
+  });
+}
 
 function formatWindowLabel(hoursValue) {
   const hours = Number(hoursValue);
@@ -353,3 +373,5 @@ updateSummary();
 renderAlerts([]);
 updateAutoButton();
 renderSignalSummary(null);
+setupCollapsible(tradeToggle, tradeBody, false);
+setupCollapsible(sentimentToggle, sentimentBody, true);

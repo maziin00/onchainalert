@@ -211,22 +211,30 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-  
-  button {
+
+  .btn {
     border: none;
     cursor: pointer;
     font-weight: 600;
     border-radius: 999px;
     padding: 10px 18px;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   }
-  
-  button.primary {
-    background: linear-gradient(135deg, #7c3aed, #4338ca);
-    color: white;
-    box-shadow: 0 12px 24px rgba(76, 29, 149, 0.35);
+
+  .btn.primary {
+    background: linear-gradient(135deg, #1db8d6, #0ea5e9);
+    color: #03131a;
+    box-shadow: 0 10px 24px rgba(14, 165, 233, 0.35);
   }
-  
-  button.ghost {
+
+  .btn.secondary {
+    background: rgba(30, 41, 59, 0.5);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+  }
+
+  .btn.outline {
     background: transparent;
     border: 1px solid rgba(148, 163, 184, 0.35);
     color: #cbd5f5;
@@ -255,11 +263,61 @@
     font-size: 0.8rem;
   }
 
+  .badge.outline {
+    background: rgba(14, 165, 233, 0.08);
+    color: #7dd3fc;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+  }
+
   .signal-summary {
     margin-top: 16px;
     padding: 16px;
     border-radius: 16px;
     background: rgba(8, 10, 16, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .collapsible-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .collapsible-trigger .chevron {
+    transition: transform 0.2s ease;
+    color: #94a3b8;
+  }
+
+  .trigger-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .collapsible-trigger.open .chevron {
+    transform: rotate(180deg);
+  }
+
+  .collapsible-content {
+    margin-top: 12px;
+  }
+
+  .signal-box {
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(8, 12, 20, 0.75);
     border: 1px solid rgba(148, 163, 184, 0.16);
   }
 

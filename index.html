@@ -85,17 +85,22 @@
             </label>
           </div>
           <div class="actions">
-            <button type="button" class="primary" id="fetch-alerts">Ambil Alert</button>
-            <button type="button" class="ghost" id="toggle-auto">Stop</button>
-            <button type="button" class="ghost" id="clear-alerts">Bersihkan</button>
+            <button type="button" class="btn primary" id="fetch-alerts">Ambil Alert</button>
+            <button type="button" class="btn secondary" id="toggle-auto">Stop</button>
+            <button type="button" class="btn outline" id="clear-alerts">Bersihkan</button>
           </div>
           <div class="trade-signal" id="trade-signal">
-            <div class="signal-header">
-              <h3>Signal Buy/Sell</h3>
-              <span class="signal-badge neutral" id="trade-action">-</span>
+            <button class="collapsible-trigger" id="trade-toggle" type="button">
+              <span>Signal Buy/Sell</span>
+              <span class="trigger-meta">
+                <span class="signal-badge neutral" id="trade-action">-</span>
+                <span class="chevron" aria-hidden="true">⌄</span>
+              </span>
+            </button>
+            <div class="collapsible-content" id="trade-body">
+              <div class="trade-grid" id="trade-list"></div>
+              <p class="signal-meta">Harga dihitung dari CMC (estimasi 5%-10%).</p>
             </div>
-            <div class="trade-grid" id="trade-list"></div>
-            <p class="signal-meta">Harga dihitung dari CMC (estimasi 5%-10%).</p>
           </div>
           <p class="error" id="error-message" hidden></p>
         </div>
@@ -103,47 +108,51 @@
         <div class="panel">
           <div class="panel-header">
             <h2>Alert List</h2>
-            <span class="badge" id="alert-count">0 Signal</span>
+            <span class="badge outline" id="alert-count">0 Signal</span>
           </div>
           <div class="signal-summary" id="signal-summary">
-            <div class="signal-header">
-              <h3>Sentiment</h3>
-              <span class="signal-badge neutral" id="signal-status">-</span>
-            </div>
-            <div class="signal-grid">
-              <div>
-                <p class="label">TimeFrame</p>
-                <strong id="signal-timeframe-value">-</strong>
+            <button class="collapsible-trigger" id="sentiment-toggle" type="button">
+              <span>Sentiment</span>
+              <span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="collapsible-content" id="sentiment-body">
+              <div class="signal-box">
+                <div class="signal-grid">
+                  <div>
+                    <p class="label">Timeframe</p>
+                    <strong id="signal-timeframe-value">-</strong>
+                  </div>
+                  <div>
+                    <p class="label">CEX inflow</p>
+                    <strong id="signal-cex-inflow">$0</strong>
+                  </div>
+                  <div>
+                    <p class="label">CEX outflow</p>
+                    <strong id="signal-cex-outflow">$0</strong>
+                  </div>
+                  <div>
+                    <p class="label">CEX net</p>
+                    <strong id="signal-cex-net">$0</strong>
+                  </div>
+                  <div>
+                    <p class="label">Akumulasi</p>
+                    <strong id="signal-accumulators">0</strong>
+                  </div>
+                  <div>
+                    <p class="label">Distribusi</p>
+                    <strong id="signal-distributors">0</strong>
+                  </div>
+                </div>
+                <p class="signal-meta">
+                  Wallet Unik: <strong id="signal-wallets">0</strong> • Smart Money:
+                  <strong id="signal-smart">0</strong> • Market Maker:
+                  <strong id="signal-mm">0</strong>
+                </p>
+                <div class="signal-movers">
+                  <p class="label">Top Movers</p>
+                  <div class="signal-list" id="signal-movers"></div>
+                </div>
               </div>
-              <div>
-                <p class="label">CEX inflow</p>
-                <strong id="signal-cex-inflow">$0</strong>
-              </div>
-              <div>
-                <p class="label">CEX outflow</p>
-                <strong id="signal-cex-outflow">$0</strong>
-              </div>
-              <div>
-                <p class="label">CEX net</p>
-                <strong id="signal-cex-net">$0</strong>
-              </div>
-              <div>
-                <p class="label">Akumulasi</p>
-                <strong id="signal-accumulators">0</strong>
-              </div>
-              <div>
-                <p class="label">Distribusi</p>
-                <strong id="signal-distributors">0</strong>
-              </div>
-            </div>
-            <p class="signal-meta">
-              Wallet Unik: <strong id="signal-wallets">0</strong> • Smart Money:
-              <strong id="signal-smart">0</strong> • Market Maker:
-              <strong id="signal-mm">0</strong>
-            </p>
-            <div class="signal-movers">
-              <p class="label">Top Movers</p>
-              <div class="signal-list" id="signal-movers"></div>
             </div>
           </div>
           <div class="empty" id="empty-state">
