@@ -7,6 +7,7 @@ const STABLECOIN_SYMBOLS = new Set([
   "DAI",
   "USDE",
   "USDD",
+  "USDG",
   "TUSD",
   "USDP",
   "USD1",
@@ -458,9 +459,24 @@ export default async (request) => {
     if (topMovers.length > 0) {
       const action = signal === "bullish" ? "buy" : signal === "bearish" ? "sell" : "wait";
       if (action !== "wait") {
-        const candidates = topMovers
-          .filter((mover) => (action === "buy" ? mover.netUsd > 0 : mover.netUsd < 0))
-          .slice(0, 3);
+        const seenSymbols = new Set();
+        const candidates = topMovers.filter((mover) => {
+          const symbol = (mover.tokenSymbol || "").toUpperCase();
+          if (STABLECOIN_SYMBOLS.has(symbol)) {
+            return false;
+          }
+          if (action === "buy" && mover.netUsd <= 0) {
+            return false;
+          }
+          if (action === "sell" && mover.netUsd >= 0) {
+            return false;
+          }
+          if (seenSymbols.has(symbol)) {
+            return false;
+          }
+          seenSymbols.add(symbol);
+          return true;
+        }).slice(0, 3);
         tradeSignals = candidates.map((mover) => {
           const price = priceMap.get(mover.tokenSymbol) || 0;
           const support = price ? price * 0.95 : 0;
