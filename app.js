@@ -75,12 +75,12 @@ function renderAlerts(alerts) {
   if (!alerts.length) {
     emptyState.hidden = false;
     alertList.hidden = true;
-    alertCount.textContent = "0 sinyal";
+    alertCount.textContent = "0 Signal";
     return;
   }
   emptyState.hidden = true;
   alertList.hidden = false;
-  alertCount.textContent = `${alerts.length} sinyal`;
+  alertCount.textContent = `${alerts.length} Signal`;
 
   alerts.forEach((alert) => {
     const card = document.createElement("div");
